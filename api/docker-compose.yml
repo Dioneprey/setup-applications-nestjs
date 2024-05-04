@@ -1,0 +1,71 @@
+version: '3'
+
+services:
+  database:
+    container_name: example_database
+    env_file:
+      - .env
+    image: 'postgres'
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}    
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+    networks:
+      - network
+
+  pgadmin:
+    image: dpage/pgadmin4:6.10
+    ports:
+      - 8080:80
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=johndoe@gmail.com
+      - PGADMIN_DEFAULT_PASSWORD=123456
+    links:
+      - database
+    networks:
+      - network
+      
+  redis:
+    image: redis:latest
+    container_name: example_redis_server
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis:/data
+    restart: always
+    command: redis-server --appendonly yes
+    networks:
+      - network
+
+  mongo:
+    image: mongo
+    ports:
+      - '2727:27017'
+    volumes:
+      - ./mongo:/data/db
+    restart: always
+    networks:
+      - network
+
+  mongo-express:
+    image: mongo-express
+    ports:
+      - 8585:8081
+    environment:
+      ME_CONFIG_BASICAUTH_USERNAME: user
+      ME_CONFIG_BASICAUTH_PASSWORD: pass
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017
+    depends_on:
+      - mongo
+    restart: always
+    links:
+      - mongo:mongodb
+    networks:
+      - network
+
+networks:
+  network:
+    driver: bridge
